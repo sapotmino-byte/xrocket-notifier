@@ -1,0 +1,8 @@
+.env
+sessions/*.session
+sessions/*.session-journal
+xrocket_notifier.log
+__pycache__/
+*.pyc
+
+sessions/
