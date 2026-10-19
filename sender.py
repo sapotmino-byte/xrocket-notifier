@@ -1,4 +1,6 @@
+
 import logging
+from pathlib import Path
 
 from telethon import TelegramClient
 
@@ -6,14 +8,20 @@ import config
 
 log = logging.getLogger("sender")
 
+# Абсолютный путь к папке сессий на сервере
+SESSION_DIR = Path(__file__).resolve().parent / "sessions"
+SESSION_DIR.mkdir(parents=True, exist_ok=True)
+
 
 class ChannelSender:
     def __init__(self):
         self.client = None
 
     async def start(self):
+        session_path = str(SESSION_DIR / "bot_session")
+
         self.client = TelegramClient(
-            "sessions/bot_session",
+            session_path,
             config.API_ID,
             config.API_HASH,
         )
