@@ -14,7 +14,7 @@ async def start_health_server():
     которые требуют отвечать на запросы на переменную окружения PORT.
     Локально не работает (PORT не задан)."""
     global _runner
-    port = int(os.getenv("PORT", "0"))
+    port = int(os.getenv("PORT") or "0")
     if not port:
         return False
 

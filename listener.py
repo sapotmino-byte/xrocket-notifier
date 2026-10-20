@@ -1,3 +1,4 @@
+
 import html
 import logging
 
@@ -21,8 +22,8 @@ class AccountListener:
         self.session_name = f"sessions/account_{label}"
 
         session_string = config.SESSION_STRINGS.get(label)
+
         if session_string:
-            # Облачный режим: сессия живёт в переменной окружения
             self.client = TelegramClient(
                 StringSession(session_string),
                 config.API_ID,
@@ -30,7 +31,6 @@ class AccountListener:
             )
             self.from_session_string = True
         else:
-            # Локальный режим: сессия живёт в файле sessions/
             self.client = TelegramClient(
                 self.session_name,
                 config.API_ID,
@@ -41,16 +41,20 @@ class AccountListener:
     async def start(self):
         if self.from_session_string:
             await self.client.connect()
+
             if not await self.client.is_user_authorized():
                 raise RuntimeError(
                     f"Строка сессии для [{self.label}] не активна. "
-                    f"Переконайся через локальный login/qr_login и обнови SESSION_STRINGS"
+                    "Проверь локальную авторизацию и обнови SESSION_STRINGS."
                 )
         else:
             await self.client.start(phone=self.phone)
+
         me = await self.client.get_me()
+        nick = config.ACCOUNT_NICKS.get(self.label, self.label)
+
         log.info(
-            f"[{self.label}] Вошёл как: {me.first_name} (@{me.username}) "
+            f"[{nick}] Вошёл как: {me.first_name} (@{me.username}) "
             f"phone={self.phone}"
         )
 
@@ -60,10 +64,11 @@ class AccountListener:
         async def handler(event):
             await self.on_xrocket_message(event)
 
-        log.info(f"[{self.label}] Слушаю @{config.XROCKET_USERNAME}")
+        log.info(f"[{nick}] Слушаю @{config.XROCKET_USERNAME}")
 
     async def on_xrocket_message(self, event):
         raw = event.message.message or ""
+
         if not raw:
             return
 
@@ -75,12 +80,20 @@ class AccountListener:
             key = f"{etype}:{data['deal_id']}"
 
             if was_seen(key):
-                log.info(f"[{self.label}] Дубликат {etype} #{data['deal_id']} — пропускаю")
+                log.info(
+                    f"[{self.label}] Дубликат {etype} "
+                    f"#{data['deal_id']} — пропускаю"
+                )
                 return
 
             formatted = build(etype, data)
             mark_seen(key)
-            log.info(f"[{self.label}] {etype} сделка #{data['deal_id']} → отправляю по шаблону")
+
+            log.info(
+                f"[{self.label}] {etype} сделка "
+                f"#{data['deal_id']} → отправляю по шаблону"
+            )
+
             await sender.send_to_channel(self.label, formatted)
             return
 
@@ -89,10 +102,14 @@ class AccountListener:
             return
 
         clean = get_clean_text(raw)
+
         if not is_important(clean):
             return
 
-        log.info(f"[{self.label}] Уведомление без шаблона: {clean[:80]}...")
+        log.info(
+            f"[{self.label}] Уведомление без шаблона: {clean[:80]}..."
+        )
+
         await sender.send_to_channel(self.label, html.escape(clean))
 
     async def stop(self):
@@ -102,16 +119,19 @@ class AccountListener:
 
 async def start_all_listeners() -> list:
     listeners = []
+
     for i, acc in enumerate(config.ACCOUNTS, 1):
         listener = AccountListener(acc["label"], acc["phone"], i)
+
         try:
             await listener.start()
             listeners.append(listener)
         except Exception as e:
             log.error(f"[{acc['label']}] Не удалось запустить: {e}")
+
     return listeners
 
 
 async def stop_all_listeners(listeners):
-    for l in listeners:
-        await l.stop()
+    for listener in listeners:
+        await listener.stop()

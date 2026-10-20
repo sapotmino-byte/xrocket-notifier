@@ -91,3 +91,10 @@ SPAM_KEYWORDS = [
 ]
 
 COMPILED_SPAM = compile_patterns(SPAM_KEYWORDS)
+
+ACCOUNT_NICKS = {
+    "Акк-1": "@skupka000",
+    "Акк-2": "@xxxxoppp",
+    "Акк-3": "@solovsell",
+    "Акк-4": "@vtriil",
+}

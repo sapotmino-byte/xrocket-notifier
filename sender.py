@@ -33,7 +33,9 @@ class ChannelSender:
             log.error("Bot client не запущен")
             return
 
-        message = f"🔔 [{label}]\n\n{text}"
+        nick = config.ACCOUNT_NICKS.get(label, label)
+        message = f"🔔 [{nick}]\n\n{text}"
+
         try:
             await self.client.send_message(
                 config.NOTIFY_CHANNEL,
